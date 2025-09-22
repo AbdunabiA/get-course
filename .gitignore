@@ -1,0 +1,65 @@
+# ===================================
+# Node / Next.js (Frontend)
+# ===================================
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/.turbo/
+frontend/.vercel/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/package-lock.json
+frontend/yarn.lock
+frontend/pnpm-lock.yaml
+
+# ===================================
+# Python / FastAPI (Backend)
+# ===================================
+backend/__pycache__/
+backend/*.py[cod]
+backend/.venv/
+backend/venv/
+backend/env/
+backend/.env
+backend/.mypy_cache/
+backend/.pytest_cache/
+backend/.coverage
+backend/.coverage.*
+backend/htmlcov/
+backend/.tox/
+backend/.DS_Store
+
+# ===================================
+# Common Environments
+# ===================================
+.env
+.env.*.local
+*.env.local
+*.log
+
+# ===================================
+# OS / Editor / IDE files
+# ===================================
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ===================================
+# Build Artifacts
+# ===================================
+*.out
+*.log
+*.pid
+*.seed
+*.tgz
+
+# ===================================
+# Coverage / Test
+# ===================================
+coverage/
+.nyc_output/

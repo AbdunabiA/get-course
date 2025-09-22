@@ -1,0 +1,42 @@
+# ===================================
+# Handle line endings
+# ===================================
+# Auto-detect text files and normalize to LF
+* text=auto eol=lf
+
+# ===================================
+# Common source code
+# ===================================
+*.js  text eol=lf
+*.jsx text eol=lf
+*.ts  text eol=lf
+*.tsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+
+# ===================================
+# Mark binary files
+# ===================================
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.mp4 binary
+*.mov binary
+*.exe binary
+*.dll binary
+*.so  binary
+
+# ===================================
+# GitHub linguist overrides (optional)
+# Helps GitHub show correct language stats
+# ===================================
+backend/* linguist-language=Python
+frontend/* linguist-language=JavaScript
