@@ -3,32 +3,27 @@ from sqlmodel import SQLModel, create_engine, Session
 from app.core.config import settings
 import logging
 
-# Set up logging
+# Configure logging (only show SQL if needed)
 logging.basicConfig()
-logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+logging.getLogger("sqlalchemy.engine").setLevel(
+    logging.INFO if settings.DEBUG else logging.WARNING)
 
-# Create database engine
+# Create the database engine
 engine = create_engine(
     settings.DATABASE_URL,
-    echo=True,  # Set to False in production
-    pool_pre_ping=True,  # Verify connections before use
+    echo=settings.DEBUG,       # Show SQL only in debug mode
+    pool_pre_ping=True,        # Check connections before using them
 )
 
 
-def create_db_and_tables():
-    """Create database tables"""
-    SQLModel.metadata.create_all(engine)
-    print("✅ Database tables created successfully!")
-
-
 def get_session():
-    """Get database session - use as dependency"""
+    """Dependency for FastAPI routes"""
     with Session(engine) as session:
         yield session
 
-# For manual database operations
-
 
 def get_db_session():
-    """Get database session for manual operations"""
+    """Manual session usage (outside of FastAPI DI)"""
     return Session(engine)
+
+

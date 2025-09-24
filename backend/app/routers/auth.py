@@ -1,15 +1,13 @@
-from app.models.models import User, UserRole
-from fastapi import Depends, HTTPException, status, Request
-from fastapi import Response
+# backend/app/routers/auth.py - SIMPLIFIED VERSION
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 from app.core.database import get_session
-from app.models.models import (
+from app.models import (
     User, Profile, RefreshToken,
-    UserCreate, UserRead,
     UserRole
 )
+from app.schemas import UserCreate
 from app.auth.utils import (
     hash_password, verify_password, create_access_token,
     generate_refresh_token, hash_refresh_token
@@ -19,55 +17,57 @@ from app.auth.dependencies import (
     AuthenticationError
 )
 from datetime import datetime, timedelta
+from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 
-@router.post("/register", status_code=status.HTTP_201_CREATED, response_model=UserRead)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     user_data: UserCreate,
     response: Response,
     session: Session = Depends(get_session)
 ):
-    """Register a new user. Creates user + profile in a single transaction, sets tokens as secure httpOnly cookies."""
-
-    # Check if user already exists
-    statement = select(User).where(User.email == user_data.email)
-    existing_user = session.exec(statement).first()
-
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
+    """Register a new user"""
 
     try:
-        # Use a transaction so user and profile are created atomically
-        with session.begin():
-            hashed_password = hash_password(user_data.password)
-            new_user = User(
-                email=user_data.email,
-                password_hash=hashed_password,
-                role=user_data.role if hasattr(
-                    user_data, 'role') else UserRole.STUDENT
-            )
-            session.add(new_user)
-            session.flush()  # ensure new_user.id is available
+        # Check if user already exists
+        statement = select(User).where(User.email == user_data.email)
+        existing_user = session.exec(statement).first()
 
-            new_profile = Profile(
-                name=user_data.name,
-                user_id=new_user.id
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
             )
-            session.add(new_profile)
 
-        # Refresh objects
+        # Create new user
+        hashed_password = hash_password(user_data.password)
+        new_user = User(
+            email=user_data.email,
+            password_hash=hashed_password,
+            role=user_data.role if hasattr(
+                user_data, 'role') else UserRole.STUDENT
+        )
+
+        session.add(new_user)
+        session.commit()
         session.refresh(new_user)
+
+        # Create user profile
+        new_profile = Profile(
+            name=user_data.name,
+            user_id=new_user.id
+        )
+        session.add(new_profile)
+        session.commit()
 
         # Create tokens
         access_token = create_access_token({
-            "sub": str(new_user.id),
+            "sub": new_user.id,
             "email": new_user.email,
             "role": new_user.role
         })
@@ -75,7 +75,7 @@ async def register(
         refresh_token = generate_refresh_token()
         hashed_refresh_token = hash_refresh_token(refresh_token)
 
-        # Save refresh token to DB (outside transaction to avoid re-using session.begin complexity)
+        # Save refresh token to database
         db_refresh_token = RefreshToken(
             hashed_token=hashed_refresh_token,
             user_id=new_user.id,
@@ -83,25 +83,30 @@ async def register(
         )
         session.add(db_refresh_token)
         session.commit()
-        session.refresh(db_refresh_token)
 
         # Set cookies
         set_auth_cookies(response, access_token, refresh_token)
 
         logger.info(f"New user registered: {new_user.email}")
 
-        return UserRead(
-            id=new_user.id,
-            email=new_user.email,
-            role=new_user.role,
-            created_at=new_user.created_at,
-            updated_at=new_user.updated_at
-        )
+        return {
+            "message": "Registration successful",
+            "user": {
+                "id": new_user.id,
+                "email": new_user.email,
+                "role": new_user.role
+            }
+        }
 
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Error while registering user: {e}")
         session.rollback()
-        logger.exception("Error while registering user")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed"
+        )
 
 
 @router.post("/login", response_model=dict)
@@ -110,8 +115,9 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session)
 ):
-    """Login user and set access + refresh tokens in secure httpOnly cookies."""
+    """Login user with email and password"""
 
+    # Find user by email
     statement = select(User).where(User.email == form_data.username)
     user = session.exec(statement).first()
 
@@ -121,42 +127,38 @@ async def login(
             detail="Incorrect email or password"
         )
 
-    try:
-        access_token = create_access_token({
-            "sub": str(user.id),
+    # Create tokens
+    access_token = create_access_token({
+        "sub": user.id,
+        "email": user.email,
+        "role": user.role
+    })
+
+    refresh_token = generate_refresh_token()
+    hashed_refresh_token = hash_refresh_token(refresh_token)
+
+    # Save refresh token to database
+    db_refresh_token = RefreshToken(
+        hashed_token=hashed_refresh_token,
+        user_id=user.id,
+        expires_at=datetime.utcnow() + timedelta(days=30)
+    )
+    session.add(db_refresh_token)
+    session.commit()
+
+    # Set cookies
+    set_auth_cookies(response, access_token, refresh_token)
+
+    logger.info(f"User logged in: {user.email}")
+
+    return {
+        "message": "Login successful",
+        "user": {
+            "id": user.id,
             "email": user.email,
             "role": user.role
-        })
-
-        refresh_token = generate_refresh_token()
-        hashed_refresh_token = hash_refresh_token(refresh_token)
-
-        db_refresh_token = RefreshToken(
-            hashed_token=hashed_refresh_token,
-            user_id=user.id,
-            expires_at=datetime.utcnow() + timedelta(days=30)
-        )
-        session.add(db_refresh_token)
-        session.commit()
-        session.refresh(db_refresh_token)
-
-        set_auth_cookies(response, access_token, refresh_token)
-
-        logger.info(f"User logged in: {user.email}")
-
-        return {
-            "message": "Login successful",
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "role": user.role
-            }
         }
-
-    except Exception as e:
-        session.rollback()
-        logger.exception("Error during login")
-        raise HTTPException(status_code=500, detail="Internal server error")
+    }
 
 
 @router.post("/refresh", response_model=dict)
@@ -165,17 +167,20 @@ async def refresh_token(
     response: Response,
     session: Session = Depends(get_session)
 ):
-    """Refresh access token using refresh token (rotation + revocation)."""
+    """Refresh access token using refresh token - SIMPLIFIED VERSION"""
+
+    # Get refresh token from cookie
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
-        clear_auth_cookies(response)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token not found"
         )
 
+    # Hash the refresh token to look up in database
     hashed_token = hash_refresh_token(refresh_token)
 
+    # Find the refresh token in database
     statement = select(RefreshToken).where(
         RefreshToken.hashed_token == hashed_token,
         RefreshToken.is_revoked == False,
@@ -184,61 +189,54 @@ async def refresh_token(
     db_refresh_token = session.exec(statement).first()
 
     if not db_refresh_token:
-        clear_auth_cookies(response)
+        clear_auth_cookies(response)  # Clear invalid cookies
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token"
         )
 
+    # Get the user
     user = session.get(User, db_refresh_token.user_id)
     if not user:
-        clear_auth_cookies(response)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found"
         )
 
-    try:
-        # Revoke old token
-        db_refresh_token.is_revoked = True
-        session.add(db_refresh_token)
+    # Revoke the old refresh token (rotation)
+    db_refresh_token.is_revoked = True
 
-        # Create new tokens
-        new_access_token = create_access_token({
-            "sub": str(user.id),
-            "email": user.email,
-            "role": user.role
-        })
-        new_refresh_token = generate_refresh_token()
-        new_hashed_refresh_token = hash_refresh_token(new_refresh_token)
+    # Create new tokens
+    new_access_token = create_access_token({
+        "sub": user.id,
+        "email": user.email,
+        "role": user.role
+    })
 
-        new_db_refresh_token = RefreshToken(
-            hashed_token=new_hashed_refresh_token,
-            user_id=user.id,
-            expires_at=datetime.utcnow() + timedelta(days=30)
-        )
+    new_refresh_token = generate_refresh_token()
+    new_hashed_refresh_token = hash_refresh_token(new_refresh_token)
 
-        session.add(new_db_refresh_token)
-        session.commit()
-        session.refresh(new_db_refresh_token)
+    # Save new refresh token to database
+    new_db_refresh_token = RefreshToken(
+        hashed_token=new_hashed_refresh_token,
+        user_id=user.id,
+        expires_at=datetime.utcnow() + timedelta(days=30)
+    )
 
-        # Link old to new AFTER new token has an id
-        db_refresh_token.replaced_by_id = new_db_refresh_token.id
-        session.add(db_refresh_token)
-        session.commit()
+    # Link the old token to new one (for audit trail)
+    db_refresh_token.replaced_by_id = new_db_refresh_token.id
 
-        # Set new cookies
-        set_auth_cookies(response, new_access_token, new_refresh_token)
+    session.add(new_db_refresh_token)
+    session.commit()
 
-        logger.info(f"Token refreshed for user {user.id}")
+    # Set new cookies
+    set_auth_cookies(response, new_access_token, new_refresh_token)
 
-        return {"message": "Token refreshed successfully"}
+    logger.info(f"Token refreshed for user {user.id}")
 
-    except Exception as e:
-        session.rollback()
-        logger.exception("Error during token refresh")
-        clear_auth_cookies(response)
-        raise HTTPException(status_code=500, detail="Internal server error")
+    return {
+        "message": "Token refreshed successfully"
+    }
 
 
 @router.post("/logout", response_model=dict)
@@ -248,13 +246,16 @@ async def logout(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """Logout user and revoke refresh token from this device."""
+    """Logout user and revoke refresh token - SIMPLIFIED VERSION"""
+
+    # Get refresh token from cookie
     refresh_token = request.cookies.get("refresh_token")
 
     if refresh_token:
         try:
             hashed_token = hash_refresh_token(refresh_token)
 
+            # Find and revoke the refresh token
             statement = select(RefreshToken).where(
                 RefreshToken.hashed_token == hashed_token,
                 RefreshToken.user_id == current_user.id
@@ -263,15 +264,16 @@ async def logout(
 
             if db_refresh_token:
                 db_refresh_token.is_revoked = True
-                session.add(db_refresh_token)
                 session.commit()
 
         except Exception as e:
-            session.rollback()
             logger.warning(f"Error during logout: {e}")
 
+    # Clear cookies regardless of refresh token status
     clear_auth_cookies(response)
+
     logger.info(f"User logged out: {current_user.email}")
+
     return {"message": "Logout successful"}
 
 
@@ -281,27 +283,26 @@ async def logout_all(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """Revoke all refresh tokens for the current user."""
-    try:
-        statement = select(RefreshToken).where(
-            RefreshToken.user_id == current_user.id,
-            RefreshToken.is_revoked == False
-        )
-        refresh_tokens = session.exec(statement).all()
+    """Logout from all devices (revoke all refresh tokens)"""
 
-        for token in refresh_tokens:
-            token.is_revoked = True
-            session.add(token)
+    # Revoke all refresh tokens for this user
+    statement = select(RefreshToken).where(
+        RefreshToken.user_id == current_user.id,
+        RefreshToken.is_revoked == False
+    )
+    refresh_tokens = session.exec(statement).all()
 
-        session.commit()
-        clear_auth_cookies(response)
-        logger.info(f"All sessions revoked for user: {current_user.email}")
-        return {"message": "Logged out from all devices"}
+    for token in refresh_tokens:
+        token.is_revoked = True
 
-    except Exception as e:
-        session.rollback()
-        logger.exception("Error during logout-all")
-        raise HTTPException(status_code=500, detail="Internal server error")
+    session.commit()
+
+    # Clear cookies
+    clear_auth_cookies(response)
+
+    logger.info(f"All sessions revoked for user: {current_user.email}")
+
+    return {"message": "Logged out from all devices"}
 
 
 @router.get("/me", response_model=dict)
@@ -309,6 +310,9 @@ async def get_current_user_info(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
+    """Get current user information"""
+
+    # Get user profile
     statement = select(Profile).where(Profile.user_id == current_user.id)
     profile = session.exec(statement).first()
 
@@ -327,9 +331,12 @@ async def get_current_user_info(
         } if profile else None
     }
 
+# Development endpoint - remove in production
+
 
 @router.get("/test-protected")
 async def test_protected_route(current_user: User = Depends(get_current_user)):
+    """Test endpoint to verify authentication is working"""
     return {
         "message": "This is a protected route!",
         "user": {
@@ -338,4 +345,3 @@ async def test_protected_route(current_user: User = Depends(get_current_user)):
             "role": current_user.role
         }
     }
-

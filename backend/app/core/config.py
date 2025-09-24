@@ -26,10 +26,11 @@ class Settings(BaseSettings):
     APP_NAME: str = "LearnHub API"
     APP_VERSION: str = "1.0.0"
 
+    # Debug mode (added for logging config and env flexibility)
+    DEBUG: bool = True
+
     class Config:
         env_file = ".env"
 
 
 settings = Settings()
-
-

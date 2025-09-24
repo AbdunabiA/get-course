@@ -2,14 +2,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session, select, func, and_
 from app.core.database import get_session
-from app.models.models import (
-    Course, Lesson, Enrollment, Category, User,
-    CourseCreate, CourseRead, CourseUpdate,
-    LessonCreate, LessonRead, LessonUpdate,
-    EnrollmentCreate, EnrollmentRead,
-    CategoryCreate, CategoryRead,
-    UserRole
+from app.models import (
+    Course, Lesson, Enrollment, Category, User, UserRole
 )
+from app.schemas import (
+    CourseCreate, CourseRead, CourseUpdate, LessonCreate, LessonRead, LessonUpdate, EnrollmentCreate, EnrollmentRead, CategoryCreate, CategoryRead
+    )
 from app.auth.dependencies import (
     get_current_user, require_instructor, require_admin
 )

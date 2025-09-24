@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select, func, and_
 from app.core.database import get_session
-from app.models.models import (
+from app.models import (
     Course, Lesson, Enrollment, Review, User,
     UserRole
 )

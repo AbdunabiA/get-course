@@ -2,10 +2,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from app.core.database import get_session
-from app.models.models import (
-    Category, User,
-    CategoryCreate, CategoryRead, CategoryUpdate,
+from app.models import (
+    Category, User, Course
 )
+from app.schemas import CategoryCreate, CategoryRead, CategoryUpdate
 from app.auth.dependencies import get_current_user, require_admin
 from typing import List
 import logging
@@ -149,7 +149,7 @@ async def delete_category(
         )
 
     # Check if category is being used by any courses
-    from app.models.models import Course
+
     courses_using_category = session.exec(
         select(Course).where(Course.category_id == category_id)
     ).first()

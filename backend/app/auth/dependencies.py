@@ -3,7 +3,7 @@ from fastapi import Response
 from fastapi import Depends, HTTPException, status, Request
 from sqlmodel import Session, select
 from app.core.database import get_session
-from app.models.models import User, UserRole
+from app.models import User, UserRole
 from app.auth.utils import verify_access_token
 from app.core.config import settings
 import logging
