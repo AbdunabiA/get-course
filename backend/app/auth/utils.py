@@ -23,12 +23,18 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(data: dict) -> str:
-    """Create a JWT access token"""
+
+    """Create a JWT access token with exp, iat and nbf claims."""
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    now = datetime.utcnow()
+    expire = now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire, "iat": now, "nbf": now})
+    # Ensure `sub` is string (helps when casting ints)
+    if "sub" in to_encode:
+        to_encode["sub"] = str(to_encode["sub"])
     encoded_jwt = jwt.encode(
-        to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+        to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
+    )
     return encoded_jwt
 
 
@@ -44,9 +50,9 @@ def verify_access_token(token: str) -> dict:
 # Refresh Token functions
 
 
-def generate_refresh_token() -> str:
-    """Generate a secure random refresh token"""
-    return secrets.token_urlsafe(128)
+def generate_refresh_token(length: int = 64) -> str:
+    """Generate a secure random refresh token. Default length is strong enough for most apps."""
+    return secrets.token_urlsafe(length)
 
 
 def hash_refresh_token(token: str) -> str:

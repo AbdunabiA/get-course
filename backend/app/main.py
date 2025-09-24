@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import create_db_and_tables
-from app.routers import auth
+from app.routers import auth, courses, enrollments, categories, instructor
 
 # Create FastAPI app
 app = FastAPI(
@@ -25,6 +25,10 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router)
+app.include_router(courses.router)
+app.include_router(enrollments.router)
+app.include_router(categories.router)
+app.include_router(instructor.router)
 
 # Initialize database on startup
 
@@ -34,9 +38,8 @@ def on_startup():
     create_db_and_tables()
     print(f"🚀 {settings.APP_NAME} started successfully!")
 
-
 # Root endpoint
-print(f"🔍 DATABASE_URL: {settings.DATABASE_URL}")
+
 
 @app.get("/")
 async def root():
@@ -46,7 +49,11 @@ async def root():
         "status": "healthy",
         "endpoints": {
             "docs": "/docs",
-            "auth": "/api/auth"
+            "auth": "/api/auth",
+            "courses": "/api/courses",
+            "enrollments": "/api/enrollments",
+            "categories": "/api/categories",
+            "instructor": "/api/instructor"
         }
     }
 
