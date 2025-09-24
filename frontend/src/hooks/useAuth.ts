@@ -132,13 +132,13 @@ export const useAuth = () => {
                 // Redirect to appropriate dashboard
                 switch (userData.user.role) {
                     case 'ADMIN':
-                        router.push('/admin')
+                        router.push('/admin/dashboard')
                         break
                     case 'INSTRUCTOR':
-                        router.push('/instructor')
+                        router.push('/instructor/dashboard')
                         break
                     default:
-                        router.push('/student')
+                        router.push('/student/dashboard')
                 }
             } catch (error) {
                 console.error('Failed to fetch user data after registration:', error)

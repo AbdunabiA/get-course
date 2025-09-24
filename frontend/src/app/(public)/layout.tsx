@@ -1,4 +1,4 @@
-// frontend/src/app/(public)/layout.tsx
+
 
 import Footer from "@/components/ui/footer";
 import PublicHeader from "@/components/ui/publicHeader";

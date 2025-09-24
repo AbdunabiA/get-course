@@ -75,8 +75,8 @@ function hasRoleAccess(userRole: string, pathname: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-    const { pathname } = request.nextUrl
 
+    const { pathname } = request.nextUrl
     // Skip middleware for static files and API routes
     if (
         pathname.startsWith('/_next/') ||
@@ -203,3 +203,4 @@ export const config = {
         '/((?!_next/static|_next/image|favicon.ico|.*\\.).*)',
     ],
 }
+

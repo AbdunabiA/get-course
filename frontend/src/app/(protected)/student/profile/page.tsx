@@ -2,7 +2,7 @@
 
 const StudentProfile = () => {
   return (
-    <div>StudentProfile</div>
+    <div className="text-black">StudentProfile</div>
   )
 }
 
