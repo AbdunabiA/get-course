@@ -1,12 +1,12 @@
 import { ReactNode } from "react";
 
 interface ProtectedLayoutProps {
-  requiredRole: "STUDENT" | "INSTRUCTOR" | "ADMIN";
+  requiredRole?: "STUDENT" | "INSTRUCTOR" | "ADMIN";
   children:ReactNode
 }
 
 
-const ProtectedLayout = ({ requiredRole, children }:ProtectedLayoutProps) => {
+const ProtectedLayout = ({ children }:ProtectedLayoutProps) => {
   return children;
 };
 
