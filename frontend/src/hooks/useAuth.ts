@@ -3,9 +3,10 @@ import React from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
-import { useAuthStore, User, Profile } from '@/stores/authStore'
+import { useAuthStore, User } from '@/stores/authStore'
 import { queryKeys } from '@/lib/queryClient'
 import { toast } from 'sonner'
+import { ApiError } from '@/types/api'
 
 interface LoginData {
     username: string // email
@@ -18,10 +19,10 @@ interface RegisterData {
     name: string
 }
 
-interface AuthResponse {
-    user: User
-    profile?: Profile
-}
+// interface AuthResponse {
+//     user: User
+//     profile?: Profile
+// }
 
 export const useAuth = () => {
     const router = useRouter()
@@ -67,7 +68,7 @@ export const useAuth = () => {
             const response = await api.auth.login(data)
             return response.data
         },
-        onSuccess: async (data) => {
+        onSuccess: async () => {
             // After login, fetch user data
             try {
                 const userResponse = await api.auth.me()
@@ -104,7 +105,7 @@ export const useAuth = () => {
                 toast?.error('Login successful, but failed to load user data')
             }
         },
-        onError: (error: any) => {
+        onError: (error: ApiError) => {
             console.error('Login failed:', error)
             const errorMessage = error?.response?.data?.detail || 'Login failed'
             toast?.error(errorMessage)
@@ -117,7 +118,7 @@ export const useAuth = () => {
             const response = await api.auth.register(data)
             return response.data
         },
-        onSuccess: async (data) => {
+        onSuccess: async () => {
             // After registration, user should be auto-logged in
             try {
                 const userResponse = await api.auth.me()
@@ -145,7 +146,7 @@ export const useAuth = () => {
                 toast?.error('Registration successful, but failed to load user data')
             }
         },
-        onError: (error: any) => {
+        onError: (error: ApiError) => {
             console.error('Registration failed:', error)
             const errorMessage = error?.response?.data?.detail || 'Registration failed'
             toast?.error(errorMessage)
@@ -161,7 +162,7 @@ export const useAuth = () => {
             toast?.success('Logged out successfully')
             router.push('/login')
         },
-        onError: (error: any) => {
+        onError: (error: ApiError) => {
             // Even if logout API fails, clear local state
             clearAuthState()
             queryClient.clear()
@@ -179,7 +180,7 @@ export const useAuth = () => {
             toast?.success('Logged out from all devices')
             router.push('/login')
         },
-        onError: (error: any) => {
+        onError: (error: ApiError) => {
             clearAuthState()
             queryClient.clear()
             console.error('Logout all error:', error)

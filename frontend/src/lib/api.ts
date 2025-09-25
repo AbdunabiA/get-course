@@ -17,15 +17,17 @@ const apiClient: AxiosInstance = axios.create({
     },
 })
 
+interface FailedRequest {
+    resolve: (value?: unknown) => void
+    reject: (error?: unknown) => void
+}
+
 // Track if we're currently refreshing to prevent multiple refresh calls
 let isRefreshing = false
-let failedQueue: Array<{
-    resolve: (value?: any) => void
-    reject: (error?: any) => void
-}> = []
+let failedQueue: FailedRequest[] = []
 
 // Process queued requests after refresh
-const processQueue = (error: any = null) => {
+const processQueue = (error: unknown = null) => {
     failedQueue.forEach(({ resolve, reject }) => {
         if (error) {
             reject(error)
@@ -33,9 +35,9 @@ const processQueue = (error: any = null) => {
             resolve()
         }
     })
-
     failedQueue = []
 }
+
 
 // Request interceptor for logging
 apiClient.interceptors.request.use(

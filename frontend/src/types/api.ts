@@ -1,4 +1,15 @@
 // frontend/src/types/api.ts
+
+
+export interface ApiError {
+    response?: {
+        data?: {
+            detail?: string
+        }
+    }
+}
+
+
 export interface User {
     id: string
     email: string

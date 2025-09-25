@@ -1,5 +1,13 @@
 // frontend/src/lib/queryClient.ts
 import { QueryClient } from '@tanstack/react-query'
+interface CoursesListParams {
+    skip?: number
+    limit?: number
+    search?: string
+    category_id?: string
+    instructor_id?: string
+    published_only?: boolean
+}
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -30,7 +38,7 @@ export const queryKeys = {
     // Courses
     courses: {
         all: () => ['courses'] as const,
-        list: (params?: Record<string, any>) => ['courses', 'list', params] as const,
+        list: (params?: CoursesListParams) => ['courses', 'list', params] as const,
         detail: (id: string) => ['courses', 'detail', id] as const,
         lessons: (courseId: string) => ['courses', courseId, 'lessons'] as const,
     },
