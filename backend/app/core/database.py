@@ -1,5 +1,5 @@
 # backend/app/core/database.py
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import  create_engine, Session
 from app.core.config import settings
 import logging
 
@@ -12,7 +12,11 @@ logging.getLogger("sqlalchemy.engine").setLevel(
 engine = create_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,       # Show SQL only in debug mode
-    pool_pre_ping=True,        # Check connections before using them
+    pool_pre_ping=True,         # Check connections before using them
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=30,
+    pool_recycle=1800,  
 )
 
 
