@@ -1,9 +1,5 @@
-
-
 const PublicHeader = () => {
-  return (
-    <div>PublicHeader</div>
-  )
-}
+  return <div>PublicHeader</div>;
+};
 
-export default PublicHeader
+export default PublicHeader;
