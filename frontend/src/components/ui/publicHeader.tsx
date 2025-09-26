@@ -3,11 +3,10 @@
 import { useState } from "react";
 import Image from "next/image";
 import ContainerWrapper from "./containerWrapper";
-import facebook from "@/assets/icons/facebook.svg";
 import search from "@/assets/icons/search.png";
 import PrimaryButton from "./primaryButton";
 import { Menu, X } from "lucide-react";
-import bgImage from "@/assets/images/bg-img.jpg";
+// import bgImage from "@/assets/images/bg-img.jpg";
 
 
 const PublicHeader = () => {
@@ -18,7 +17,7 @@ const PublicHeader = () => {
       <ContainerWrapper>
         <div className="flex items-center justify-between py-3">
           <div className="flex items-center gap-2">
-            <Image src={facebook} alt="facebook" width={60} height={40} />
+            {/* <Image src={facebook} alt="facebook" width={60} height={40} /> */}
             <p className="font-bold text-gray-600 text-lg sm:text-xl lg:text-2xl">
               Facebook
             </p>
