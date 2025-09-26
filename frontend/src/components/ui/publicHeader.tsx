@@ -1,9 +1,9 @@
 
 "use client";
 import { useState } from "react";
-import Image from "next/image";
+// import Image from "next/image";
 import ContainerWrapper from "./containerWrapper";
-import search from "@/assets/icons/search.png";
+// import search from "@/assets/icons/search.png";
 import PrimaryButton from "./primaryButton";
 import { Menu, X } from "lucide-react";
 // import bgImage from "@/assets/images/bg-img.jpg";
@@ -39,7 +39,7 @@ const PublicHeader = () => {
                 placeholder="Search"
                 className="outline-none bg-transparent text-sm lg:text-base w-32 xl:w-48"
               />
-              <Image src={search} alt="Search" width={18} height={18} />
+              {/* <Image src={search} alt="Search" width={18} height={18} /> */}
             </div>
             <PrimaryButton className="bg-blue-600 rounded-[10px] hover:bg-gray-400 px-3 py-1 text-sm lg:px-4 lg:py-2">
               Sign Up
@@ -77,7 +77,7 @@ const PublicHeader = () => {
         )}
       </ContainerWrapper>
       <section>
-        <div className="bg-[url('@/assets/images/bg-img.jpg')] w-full h-screen bg-cover bg-center flex items-center justify-center">
+        <div className=" w-full h-screen bg-cover bg-center flex items-center justify-center">
           <div className="text-center max-w-2xl px-4">
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
               Expand your career with EduHud
