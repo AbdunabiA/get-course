@@ -40,6 +40,11 @@ clean:
 	docker stop $$(docker ps -q) || true
 	docker system prune -a --volumes -f
 
+# Reset only the database (drop Postgres volume + rebuild)
+reset-db:
+	docker compose --env-file .env.dev down -v
+	docker compose --env-file .env.dev up -d --build
+
 # Run Alembic migrations
 migrate:
 	@if [ -z "$(ENV)" ]; then \
