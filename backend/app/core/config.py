@@ -20,7 +20,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # CORS Settings
-    CORS_ORIGINS: Union[str, List[AnyHttpUrl]] = []
+    CORS_ORIGINS: Union[str, List[AnyHttpUrl]] = [
+        "http://localhost:3000", "https://get-course-alpha.vercel.app"]
 
     @validator("CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v):
