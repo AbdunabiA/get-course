@@ -1,4 +1,5 @@
 import Footer from "@/components/ui/footer";
+import HeroSection from "@/components/ui/heroSection";
 import PublicHeader from "@/components/ui/publicHeader";
 
 export default function PublicLayout({
@@ -10,6 +11,7 @@ export default function PublicLayout({
     <div className="min-h-screen flex flex-col">
       <PublicHeader />
       <main className="flex-1">{children}</main>
+      <HeroSection />
       <Footer />
     </div>
   );
