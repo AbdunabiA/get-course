@@ -1,8 +1,5 @@
-
-
 import Footer from "@/components/ui/footer";
 import PublicHeader from "@/components/ui/publicHeader";
-
 
 export default function PublicLayout({
   children,

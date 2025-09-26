@@ -65,7 +65,7 @@ apiClient.interceptors.response.use(
     async (error: AxiosError) => {
         const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean }
 
-        console.error(`[API] ${error.response?.status} ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`)
+        // console?.error(`[API] ${error?.response?.status} ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`)
 
         // If error is 401 and we haven't already tried to refresh
         if (error.response?.status === 401 && !originalRequest._retry) {
