@@ -1,7 +1,7 @@
 # backend/app/core/config.py
 from pydantic_settings import BaseSettings
 from typing import List, Union
-from pydantic import validator, AnyHttpUrl
+from pydantic import validator
 import os
 
 
@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # CORS Settings
-    CORS_ORIGINS: Union[str, List[AnyHttpUrl]] = [
+    CORS_ORIGINS: Union[str, List[str]] = [
         "http://localhost:3000", "https://get-course-alpha.vercel.app"]
 
     @validator("CORS_ORIGINS", pre=True)
