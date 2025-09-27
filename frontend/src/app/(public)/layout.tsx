@@ -1,6 +1,6 @@
-import Footer from "@/components/ui/footer";
-import HeroSection from "@/components/ui/heroSection";
-import PublicHeader from "@/components/ui/publicHeader";
+import Footer from "@/components/homePage/footer";
+import HeroSection from "@/components/homePage/heroSection";
+import PublicHeader from "@/components/homePage/publicHeader";
 
 export default function PublicLayout({
   children,

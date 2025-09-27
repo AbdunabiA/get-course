@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import PrimaryButton from "./primaryButton";
+import PrimaryButton from "@/components/ui/primaryButton";
 
 const HeroSection = () => {
   return (
