@@ -112,13 +112,13 @@ export async function middleware(request: NextRequest) {
                 const redirectUrl = new URL(request.url)
                 switch (userPayload.role) {
                     case 'ADMIN':
-                        redirectUrl.pathname = '/admin'
+                        redirectUrl.pathname = '/admin/reports'
                         break
                     case 'INSTRUCTOR':
-                        redirectUrl.pathname = '/instructor'
+                        redirectUrl.pathname = '/instructor/courses'
                         break
                     default:
-                        redirectUrl.pathname = '/student'
+                        redirectUrl.pathname = '/student/dashboard'
                 }
                 return NextResponse.redirect(redirectUrl)
             }
@@ -164,13 +164,13 @@ export async function middleware(request: NextRequest) {
             const dashboardUrl = new URL(request.url)
             switch (userPayload.role) {
                 case 'ADMIN':
-                    dashboardUrl.pathname = '/admin'
+                    dashboardUrl.pathname = '/admin/reports'
                     break
                 case 'INSTRUCTOR':
-                    dashboardUrl.pathname = '/instructor'
+                    dashboardUrl.pathname = '/instructor/courses'
                     break
                 default:
-                    dashboardUrl.pathname = '/student'
+                    dashboardUrl.pathname = '/student/dashboard'
             }
 
             return NextResponse.redirect(dashboardUrl)

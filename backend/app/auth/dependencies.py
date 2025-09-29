@@ -99,8 +99,8 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         value=access_token,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         httponly=True,
-        secure=False,  # Set to True in production with HTTPS
-        samesite="lax"
+        secure=True,  # Set to True in production with HTTPS
+        samesite="none"
     )
 
     # Set refresh token cookie (30 days)
@@ -109,8 +109,8 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         value=refresh_token,
         max_age=30 * 24 * 60 * 60,  # 30 days in seconds
         httponly=True,
-        secure=False,  # Set to True in production with HTTPS
-        samesite="lax"
+        secure=True,  # Set to True in production with HTTPS
+        samesite="none"
     )
 
 
