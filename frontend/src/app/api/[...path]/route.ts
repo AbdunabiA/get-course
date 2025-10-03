@@ -16,20 +16,17 @@ async function proxyRequest(req: NextRequest, path: string[]) {
         body: req.method !== "GET" ? await req.text() : undefined,
     })
 
-    // 🟢 Always read response as text
     const text = await backendRes.text()
 
     const res = new NextResponse(text, {
         status: backendRes.status,
     })
 
-    // ✅ Preserve JSON header (not brotli/compression headers)
     const contentType = backendRes.headers.get("content-type")
     if (contentType) {
         res.headers.set("content-type", contentType)
     }
 
-    // ✅ Re-attach cookies
     const setCookie = backendRes.headers.get("set-cookie")
     if (setCookie) {
         res.headers.set("set-cookie", setCookie)
@@ -38,10 +35,14 @@ async function proxyRequest(req: NextRequest, path: string[]) {
     return res
 }
 
-export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) {
+// --- Route Handlers ---
+
+export async function GET(req: NextRequest, context: { params: Promise<{ path: string[] }> }) {
+    const params = await context.params
     return proxyRequest(req, params.path)
 }
 
-export async function POST(req: NextRequest, { params }: { params: { path: string[] } }) {
+export async function POST(req: NextRequest, context: { params: Promise<{ path: string[] }> }) {
+    const params = await context.params
     return proxyRequest(req, params.path)
 }
