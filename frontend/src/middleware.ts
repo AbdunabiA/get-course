@@ -89,7 +89,7 @@ export async function middleware(request: NextRequest) {
     // Get access token from cookies
     const accessToken = request.cookies.get('access_token')?.value
     const refreshToken = request.cookies.get('refresh_token')?.value
-
+    console.log(request.cookies.get("access_token"))
     console.log(`[Middleware] ${pathname} - Token exists: ${!!accessToken}`)
 
     // Check if route is public
@@ -110,6 +110,16 @@ export async function middleware(request: NextRequest) {
             if (userPayload) {
                 // Redirect based on role
                 const redirectUrl = new URL(request.url)
+
+                // If there's a ?redirect= param, use that
+                const requested = request.nextUrl.searchParams.get("redirect")
+                if (requested) {
+                    redirectUrl.pathname = requested
+                    console.log("[middleware] public redirect url", redirectUrl)
+                    return NextResponse.redirect(redirectUrl)
+                    
+
+                }
                 switch (userPayload.role) {
                     case 'ADMIN':
                         redirectUrl.pathname = '/admin/reports'
@@ -118,89 +128,90 @@ export async function middleware(request: NextRequest) {
                         redirectUrl.pathname = '/instructor/courses'
                         break
                     default:
-                        redirectUrl.pathname = '/student/dashboard'
+                        redirectUrl.pathname = '/student/payments'
                 }
                 return NextResponse.redirect(redirectUrl)
             }
         }
+            return NextResponse.next()
+        }
 
+        // Protected routes - require authentication
+        if (isProtectedRoute || !isPublicRoute) {
+            // No access token - redirect to login
+            if (!accessToken) {
+                console.log('[Middleware] No access token, redirecting to login')
+                const loginUrl = new URL('/login', request.nextUrl.origin)
+                loginUrl.searchParams.set('redirect', pathname)
+                return NextResponse.redirect(loginUrl)
+            }
+
+            // Verify token structure
+            const userPayload = verifyTokenStructure(accessToken)
+
+            // Invalid token - try to refresh or redirect to login
+            if (!userPayload) {
+                console.log('[Middleware] Invalid access token')
+
+                // If we have a refresh token, let the page try to refresh
+                if (refreshToken) {
+                    console.log('[Middleware] Refresh token exists, allowing page load for refresh attempt')
+                    return NextResponse.next()
+                }
+
+                // No refresh token - redirect to login
+                const loginUrl = new URL('/login', request.url)
+                loginUrl.searchParams.set('redirect', pathname)
+                return NextResponse.redirect(loginUrl)
+            }
+
+            // Check role-based access
+            if (!hasRoleAccess(userPayload.role, pathname)) {
+                console.log(`[Middleware] Role ${userPayload.role} denied access to ${pathname}`)
+
+                // Redirect to appropriate dashboard based on role
+                const dashboardUrl = new URL(request.url)
+                switch (userPayload.role) {
+                    case 'ADMIN':
+                        dashboardUrl.pathname = '/admin/reports'
+                        break
+                    case 'INSTRUCTOR':
+                        dashboardUrl.pathname = '/instructor/courses'
+                        break
+                    default:
+                        dashboardUrl.pathname = '/student/dashboard'
+                }
+
+                return NextResponse.redirect(dashboardUrl)
+            }
+
+            // Add user info to headers for pages to use
+            const response = NextResponse.next()
+            response.headers.set('x-user-id', userPayload.sub)
+            response.headers.set('x-user-email', userPayload.email)
+            response.headers.set('x-user-role', userPayload.role)
+
+            console.log(`[Middleware] Access granted to ${userPayload.role} for ${pathname}`)
+            console.log("response", response)
+            return response
+        }
+        console.log(`[Middleware] ${pathname} - Token exists: ${!!accessToken}`)
+        console.log('[Middleware] Access token:', accessToken?.substring(0, 20))
+        // Default - allow access
         return NextResponse.next()
     }
 
-    // Protected routes - require authentication
-    if (isProtectedRoute || !isPublicRoute) {
-        // No access token - redirect to login
-        if (!accessToken) {
-            console.log('[Middleware] No access token, redirecting to login')
-            const loginUrl = new URL('/login', request.url)
-            loginUrl.searchParams.set('redirect', pathname)
-            return NextResponse.redirect(loginUrl)
-        }
-
-        // Verify token structure
-        const userPayload = verifyTokenStructure(accessToken)
-
-        // Invalid token - try to refresh or redirect to login
-        if (!userPayload) {
-            console.log('[Middleware] Invalid access token')
-
-            // If we have a refresh token, let the page try to refresh
-            if (refreshToken) {
-                console.log('[Middleware] Refresh token exists, allowing page load for refresh attempt')
-                return NextResponse.next()
-            }
-
-            // No refresh token - redirect to login
-            const loginUrl = new URL('/login', request.url)
-            loginUrl.searchParams.set('redirect', pathname)
-            return NextResponse.redirect(loginUrl)
-        }
-
-        // Check role-based access
-        if (!hasRoleAccess(userPayload.role, pathname)) {
-            console.log(`[Middleware] Role ${userPayload.role} denied access to ${pathname}`)
-
-            // Redirect to appropriate dashboard based on role
-            const dashboardUrl = new URL(request.url)
-            switch (userPayload.role) {
-                case 'ADMIN':
-                    dashboardUrl.pathname = '/admin/reports'
-                    break
-                case 'INSTRUCTOR':
-                    dashboardUrl.pathname = '/instructor/courses'
-                    break
-                default:
-                    dashboardUrl.pathname = '/student/dashboard'
-            }
-
-            return NextResponse.redirect(dashboardUrl)
-        }
-
-        // Add user info to headers for pages to use
-        const response = NextResponse.next()
-        response.headers.set('x-user-id', userPayload.sub)
-        response.headers.set('x-user-email', userPayload.email)
-        response.headers.set('x-user-role', userPayload.role)
-
-        console.log(`[Middleware] Access granted to ${userPayload.role} for ${pathname}`)
-        return response
+    // Configure which routes middleware should run on
+    export const config = {
+        matcher: [
+            /*
+             * Match all request paths except for the ones starting with:
+             * - _next/static (static files)
+             * - _next/image (image optimization files)
+             * - favicon.ico (favicon file)
+             * - public files (images, etc.)
+             */
+            '/((?!_next/static|_next/image|favicon.ico|.*\\.).*)',
+        ],
     }
-
-    // Default - allow access
-    return NextResponse.next()
-}
-
-// Configure which routes middleware should run on
-export const config = {
-    matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * - public files (images, etc.)
-         */
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.).*)',
-    ],
-}
 

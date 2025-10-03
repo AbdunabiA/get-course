@@ -17,13 +17,11 @@ export interface Profile {
 }
 
 interface AuthState {
-    // State
     user: User | null
     profile: Profile | null
     isAuthenticated: boolean
     isLoading: boolean
 
-    // Actions
     setUser: (user: User | null) => void
     setProfile: (profile: Profile | null) => void
     setLoading: (loading: boolean) => void
@@ -36,16 +34,15 @@ export const useAuthStore = create<AuthState>()(
     devtools(
         persist(
             (set) => ({
-                // Initial state
                 user: null,
                 profile: null,
                 isAuthenticated: false,
-                isLoading: true,
+                isLoading: false, // Change to false initially
 
-                // Actions
                 setUser: (user) => set({
                     user,
-                    isAuthenticated: !!user
+                    isAuthenticated: !!user,
+                    isLoading: false
                 }),
 
                 setProfile: (profile) => set({ profile }),
@@ -72,12 +69,11 @@ export const useAuthStore = create<AuthState>()(
             }),
             {
                 name: 'auth-storage',
-                // Only persist non-sensitive user data
                 partialize: (state) => ({
                     user: state.user,
                     profile: state.profile,
-                    isAuthenticated: state.isAuthenticated
                 })
+                // Don't persist isAuthenticated or isLoading
             }
         ),
         { name: 'auth-store' }

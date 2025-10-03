@@ -1,5 +1,5 @@
 // frontend/src/hooks/useAuth.ts
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
@@ -31,13 +31,14 @@ export const useAuth = () => {
         user,
         profile,
         isAuthenticated,
-        isLoading,
+        // isLoading,
         login: setAuthState,
         logout: clearAuthState,
-        setLoading,
+        // setLoading,
         setUser,
         setProfile
     } = useAuthStore()
+    const [hasChecked, setHasChecked] = useState(false)
 
     // Get current user info from server
     const { data: authData, error, isLoading: isQueryLoading } = useQuery({
@@ -46,21 +47,28 @@ export const useAuth = () => {
             const response = await api.auth.me()
             return response.data
         },
-        enabled: !isAuthenticated || !user, // Only fetch if not authenticated
+        enabled: !hasChecked && typeof window !== 'undefined'
+            && !['/login', '/register'].includes(window.location.pathname),
         retry: false, // Don't retry failed auth requests
         staleTime: 1000 * 60 * 5, // 5 minutes
     })
 
     // Sync server data with local state
-    React.useEffect(() => {
+    useEffect(() => {
         if (authData) {
+            console.log('Auth verified:', authData)
             setAuthState(authData.user, authData.profile)
-            setLoading(false)
+            setHasChecked(true)
         } else if (error) {
+            console.log('Auth invalid:', error)
             clearAuthState()
-            setLoading(false)
+            setHasChecked(true)
+        } else if (!user) {
+            // No persisted user, mark as checked
+            setHasChecked(true)
         }
-    }, [authData, error, setAuthState, clearAuthState, setLoading])
+
+    }, [authData, error, user])
 
     // Login mutation
     const loginMutation = useMutation({
@@ -73,31 +81,35 @@ export const useAuth = () => {
             try {
                 const userResponse = await api.auth.me()
                 const userData = userResponse.data
-
+                console.log("useAuth hasChecked", hasChecked)
                 setAuthState(userData.user, userData.profile)
 
                 // Invalidate and refetch auth-related queries
                 queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() })
 
                 toast?.success('Login successful!')
-
+                await new Promise(resolve => setTimeout(resolve, 100))
                 // Redirect based on role or to intended destination
                 const params = new URLSearchParams(window.location.search)
+                console.log('useAuth login url params', params);
+                
                 const redirect = params.get('redirect')
-
+                console.log("useAuth login redirect path", redirect)
                 if (redirect && redirect !== '/login' && redirect !== '/register') {
-                    router.push(redirect)
+                    // window.location.href = redirect
+                    router.replace(redirect)
+                    console.log("login redirect worked")
                 } else {
                     // Redirect based on user role
                     switch (userData.user.role) {
                         case 'ADMIN':
-                            router.push('/admin')
+                            router.push('/admin/reports')
                             break
                         case 'INSTRUCTOR':
-                            router.push('/instructor')
+                            router.push('/instructor/courses')
                             break
                         default:
-                            router.push('/student')
+                            router.push('/student/dashboard')
                     }
                 }
             } catch (error) {
@@ -218,7 +230,7 @@ export const useAuth = () => {
         user,
         profile,
         isAuthenticated,
-        isLoading: isLoading || isQueryLoading,
+        isLoading: isQueryLoading,
 
         // Actions
         login: loginMutation.mutate,

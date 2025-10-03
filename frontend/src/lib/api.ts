@@ -1,6 +1,7 @@
 // frontend/src/lib/api.ts
 import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/authStore'
+import qs from 'qs'
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -38,7 +39,6 @@ const processQueue = (error: unknown = null) => {
     failedQueue = []
 }
 
-
 // Request interceptor for logging
 apiClient.interceptors.request.use(
     (config) => {
@@ -65,7 +65,12 @@ apiClient.interceptors.response.use(
     async (error: AxiosError) => {
         const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean }
 
-        // console?.error(`[API] ${error?.response?.status} ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`)
+        console.error(`[API] ${error?.response?.status} ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`)
+
+        // Prevent infinite loop: skip refresh if refresh endpoint itself fails
+        if (originalRequest.url?.includes('/api/auth/refresh')) {
+            return Promise.reject(error)
+        }
 
         // If error is 401 and we haven't already tried to refresh
         if (error.response?.status === 401 && !originalRequest._retry) {
@@ -140,7 +145,7 @@ export const api = {
             apiClient.post('/api/auth/register', data),
 
         login: (data: { username: string; password: string }) =>
-            apiClient.post('/api/auth/login', data, {
+            apiClient.post('/api/auth/login', qs.stringify(data), {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             }),
 
