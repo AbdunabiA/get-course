@@ -10,6 +10,6 @@ class Profile(SQLModel, TimestampMixin, table=True):
     name: str
     bio: Optional[str] = None
     avatar: Optional[str] = None
-    user_id: str = Field(foreign_key="user.id", unique=True)
+    user_id: str = Field(foreign_key="user.id", unique=True, ondelete="CASCADE")
 
     user: Optional["User"] = Relationship(back_populates="profile")
