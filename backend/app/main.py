@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routers import auth, courses, enrollments, categories, instructor
+from app.routers import auth, courses, enrollments, categories, instructor, admin
 # Alembic imports for migration check
 from alembic.config import Config
 from alembic.script import ScriptDirectory
@@ -29,6 +29,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(admin.router)
 app.include_router(auth.router)
 app.include_router(courses.router)
 app.include_router(enrollments.router)
